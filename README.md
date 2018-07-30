@@ -1,5 +1,10 @@
 # Lucas-Kanade Image Alignment+
 
+![FC_sample_gif](https://github.com/cashiwamochi/LK20_ImageAlignment/blob/master/gif/FC.gif)
+![IC_sample_gif](https://github.com/cashiwamochi/LK20_ImageAlignment/blob/master/gif/IC.gif)
+![ESM_sample_gif](https://github.com/cashiwamochi/LK20_ImageAlignment/blob/master/gif/ESM.gif)
+ 
+
 ### What is this ?
 I implemented a planar tracking algorithm based on ***Lucas-Kanade 20 years frameworks*** **[1]** . Forward Compositional, Inverse Compositional and Efficient Second-Order Minimization algorithm are available. This system gives you homography matrix and it is parametrized with SL3 in optimization. In addition, this system performs coarse-to-fine optimization using image-pyramid.
 
