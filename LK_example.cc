@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 	// image, target-rect, pyramid number, how to optimize
 	LK20::LKTracker _tracker(image, track_rect, 5, LK20::ESM);
 
-	cv::Mat warped_image = _simulator.GenerateWarpedImage(35, 25, 10, 10, 10, 10);
+	cv::Mat warped_image = _simulator.GenerateWarpedImage(45, -45, 20, 30, -30, -50);
 
 	cv::Mat H0 = (cv::Mat_<float>(3,3) <<  1.f, 0.f, (float)track_rect.x,
                                   			 0.f, 1.f, (float)track_rect.y,

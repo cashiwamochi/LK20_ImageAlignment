@@ -37,11 +37,11 @@ cv::Mat Simulator::GenerateWarpedImage(int tx, int ty, int tz, int rx, int ry, i
                                                0.f, cosf(mf_alpha),sinf(mf_alpha),
                                                0.f, -sinf(mf_alpha),cosf(mf_alpha));
 
-	cv::Mat mat_rot_y = (cv::Mat_<float>(3,3) << cosf(mf_beta), 0.f, -sinf(mf_beta),
+  cv::Mat mat_rot_y = (cv::Mat_<float>(3,3) << cosf(mf_beta), 0.f, -sinf(mf_beta),
                                                0.f, 1.f, 0.f,
                                                sinf(mf_beta), 0.f, cosf(mf_beta));
 
-	cv::Mat mat_rot_z = (cv::Mat_<float>(3,3) << cosf(mf_gamma), sinf(mf_gamma), 0.f,
+  cv::Mat mat_rot_z = (cv::Mat_<float>(3,3) << cosf(mf_gamma), sinf(mf_gamma), 0.f,
                                               -sinf(mf_gamma), cosf(mf_gamma), 0.f,
                                               0.f, 0.f, 1.f);
 

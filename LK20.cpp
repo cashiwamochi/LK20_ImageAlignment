@@ -500,20 +500,22 @@ namespace LK20 {
       cv::line(mat_for_viewer,
 							 cv::Point2f(ref_p[rect_idx[i]].at<float>(0), ref_p[rect_idx[i]].at<float>(1)),
             	 cv::Point2f(ref_p[rect_idx[i+1]].at<float>(0), ref_p[rect_idx[i+1]].at<float>(1)),
-            	 cv::Scalar(255,0,0), 1);
+            	 cv::Scalar(255,255,0), 3);
 			if(!mm_H_gt.empty()) {
 				cv::line(mat_for_viewer,
 								 cv::Point2f(p[rect_idx[i]].at<float>(0), p[rect_idx[i]].at<float>(1)),
 								 cv::Point2f(p[rect_idx[i+1]].at<float>(0), p[rect_idx[i+1]].at<float>(1)),
-								 cv::Scalar(0,255,0), 1);
+								 cv::Scalar(0,255,0), 3);
 			}	
     }
 
+#if 0
 		static int count = 0;
 		std::string s_name = std::to_string(count);
-		cv::imshow(ms_window_name, mat_for_viewer);
 		cv::imwrite(s_name + ".png", mat_for_viewer);
 		count++;
+#endif
+		cv::imshow(ms_window_name, mat_for_viewer);
 		cv::waitKey(1);
 
 		return;
