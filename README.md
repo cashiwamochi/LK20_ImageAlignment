@@ -1,8 +1,8 @@
 # Lucas-Kanade Image Alignment+
 
-![FC_sample_gif](https://github.com/cashiwamochi/LK20_ImageAlignment/blob/master/gif/FC.gif)
-![IC_sample_gif](https://github.com/cashiwamochi/LK20_ImageAlignment/blob/master/gif/IC.gif)
-![ESM_sample_gif](https://github.com/cashiwamochi/LK20_ImageAlignment/blob/master/gif/ESM.gif)
+![FC_sample_gif](https://github.com/cashiwamochi/LK20_ImageAlignment/blob/master/gif/FC.gif "ForwardCompositional")
+![IC_sample_gif](https://github.com/cashiwamochi/LK20_ImageAlignment/blob/master/gif/IC.gif "InverseCompositional")
+![ESM_sample_gif](https://github.com/cashiwamochi/LK20_ImageAlignment/blob/master/gif/ESM.gif "Efficient Second-Order Minimization")
  
 
 ### What is this ?
