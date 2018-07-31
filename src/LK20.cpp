@@ -582,7 +582,7 @@ namespace LK20 {
 	cv::Mat A_i = cv::Mat::eye(3, 3, CV_32F);
 	float factor_i = 1.f;
 
-	for(int i = 0; i < 10; i++) {
+	for(int i = 0; i < 9; i++) {
 		G += (1.0/factor_i)*(A_i);
 		A_i *= A;
 		factor_i *= (float)(i+1);

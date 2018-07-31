@@ -17,11 +17,13 @@ IF (OpenCV_FOUND)
   add_definitions(${OpenCV_DEFINITIONS})
 ENDIF()
 
+include_directories(${PROJECT_SOURCE_DIR}/src)
+
 add_executable(
   LK20_Tracker
   LK_example.cc
-  ./Simulator.cpp
-  ./LK20.cpp
+  ./src/Simulator.cpp
+  ./src/LK20.cpp
   )
 
 target_link_libraries(

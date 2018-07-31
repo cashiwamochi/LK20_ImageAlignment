@@ -15,7 +15,7 @@ cmake .. && make -j2
 ./LK20_tracker ../lenna.png
 ```
 
-```LK20_example.cc``` shows you how to use this framework.
+```LK_example.cc``` shows you how to use this framework.
 
 #### Reference
 ```
