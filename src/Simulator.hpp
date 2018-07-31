@@ -19,6 +19,7 @@ class Simulator {
 
   public:
     Simulator(const cv::Mat& image);
-    cv::Mat GenerateWarpedImage(int tx, int ty, int tz, int rx, int ry, int rz);
+    cv::Mat GenerateWarpedImage(const int tx, const int ty, const int tz,
+                                const int rx, const int ry, const int rz);
     cv::Mat GetWarp();
 };

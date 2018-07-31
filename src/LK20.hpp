@@ -38,7 +38,7 @@ namespace LK20 {
 
       cv::Mat ProcessInLayer(const cv::Mat m_tmp_H,
                              const cv::Mat m_cur_image_in_pyramid,
-														 const cv::Mat m_ref_image_in_pyramid,
+                             const cv::Mat m_ref_image_in_pyramid,
                              const int level);
 
       cv::Mat WarpCurrentImage(const cv::Mat& src, const cv::Mat& H);

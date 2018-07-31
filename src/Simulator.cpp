@@ -7,8 +7,8 @@ Simulator::Simulator(const cv::Mat& image)
 {
   mm_image = image.clone();
 
-	mf_alpha = 0.f; mf_beta = 0.f; mf_gamma = 0.f;
-	mf_trans_x = 0.f; mf_trans_y = 0.f; mf_trans_z = 1.f;
+  mf_alpha = 0.f; mf_beta = 0.f; mf_gamma = 0.f;
+  mf_trans_x = 0.f; mf_trans_y = 0.f; mf_trans_z = 1.f;
 
   cv::Mat K = (cv::Mat_<float>(3,3) << 1000.f, 0.f, (float)image.cols/2.f,
                                        0.f, 1000.f, (float)image.rows/2.f,
@@ -16,9 +16,9 @@ Simulator::Simulator(const cv::Mat& image)
   mm_Kf = K.clone();
 }
 
-cv::Mat Simulator::GenerateWarpedImage(int tx, int ty, int tz, int rx, int ry, int rz) {
+cv::Mat Simulator::GenerateWarpedImage(const int tx, const int ty, const int tz,
+                                       const int rx, const int ry, const int rz) {
   cv::Mat m_warped_image;
-
   // Updata !
   {
     mf_trans_x += mfTRANS_PARAM * (float)tx;
@@ -45,7 +45,7 @@ cv::Mat Simulator::GenerateWarpedImage(int tx, int ty, int tz, int rx, int ry, i
                                               -sinf(mf_gamma), cosf(mf_gamma), 0.f,
                                               0.f, 0.f, 1.f);
 
-	mat_rot = mat_rot_z * mat_rot_y * mat_rot_x;
+  mat_rot = mat_rot_z * mat_rot_y * mat_rot_x;
 
   cv::Mat vec_t = (cv::Mat_<float>(3,1) << mf_trans_x, mf_trans_y, mf_trans_z);
 
@@ -59,10 +59,10 @@ cv::Mat Simulator::GenerateWarpedImage(int tx, int ty, int tz, int rx, int ry, i
   mat_H.at<float>(1,2) = vec_t.at<float>(1,0);
   mat_H.at<float>(2,2) = vec_t.at<float>(2,0);
 
-	mat_H = mm_Kf * mat_H.clone() * mm_Kf.inv();
-	mat_H = mat_H.clone()/(mat_H.clone()).at<float>(2,2);
+  mat_H = mm_Kf * mat_H.clone() * mm_Kf.inv();
+  mat_H = mat_H.clone()/(mat_H.clone()).at<float>(2,2);
 
-	cv::warpPerspective( mm_image, m_warped_image, mat_H,
+  cv::warpPerspective( mm_image, m_warped_image, mat_H,
                        mm_image.size(),
                        cv::INTER_LINEAR,
                        cv::BORDER_CONSTANT, cv::Scalar(0,0,0) );
