@@ -4,6 +4,7 @@ namespace LK20 {
   LKTracker::LKTracker(cv::Mat image, cv::Rect rect, int pyramid_level, CalcType t) 
     : mm_ref_image(image), m_pyramid_level(pyramid_level), m_type(t), m_height(rect.height), m_width(rect.width)
   {  
+    mm_H0.release(); // This ensures mm_H0 is empty.
     mb_verbose = false;
    // How to Calculate
     std::cout << "[MODE] : ";
@@ -17,7 +18,7 @@ namespace LK20 {
       std::cout << "Forward Compositional\n";
     }
 
-    // Image Pyramid
+    // Preprocess
     if(mm_ref_image.channels() == 3) {
       cv::cvtColor(mm_ref_image, mm_ref_working_image, cv::COLOR_BGR2GRAY);
     }
@@ -26,36 +27,12 @@ namespace LK20 {
     }
     cv::GaussianBlur(mm_ref_working_image, mm_ref_working_image, cv::Size(5,5), 0);
 
-#if 0
-    mvm_ref_image_pyramid.reserve(m_pyramid_level);
-    cv::Mat m_down_sampled_image = mm_ref_working_image.clone();
-    for(int l = 0; l < m_pyramid_level; l++) {
-      cv::pyrDown(m_down_sampled_image.clone(), m_down_sampled_image, 
-                  cv::Size(m_down_sampled_image.cols/2, m_down_sampled_image.rows/2));
-      cv::Mat m_up_sampled_image = m_down_sampled_image.clone();
-      for(int m = 0; m < l+1; m++) {
-        cv::pyrUp(m_up_sampled_image.clone(), m_up_sampled_image, 
-                  cv::Size(m_up_sampled_image.cols*2, m_up_sampled_image.rows*2));
-      }
-
-      m_up_sampled_image.convertTo(m_up_sampled_image, CV_32FC1, 1.0/255.0);
-      mvm_ref_image_pyramid.push_back(m_up_sampled_image(rect));
-    }
-    
-    if(true) {
-      for(int l = 0; l < m_pyramid_level; l++) {
-        // this works with CV_32F mat
-        cv::imshow("debug", mvm_ref_image_pyramid[l]);
-        cv::waitKey(0);
-      }
-    }
-#else
+    // Image Pyramid
     mvm_ref_image_pyramid.reserve(m_pyramid_level);
     std::vector<cv::Mat> vm_image_pyramid = GenerateImagePyramid(mm_ref_working_image, m_pyramid_level);
     for (int l = 0; l < m_pyramid_level; l++) {
       mvm_ref_image_pyramid.push_back(vm_image_pyramid[l](rect));
     }
-#endif
 
     RegisterSL3();
     PreCompute();
@@ -90,11 +67,11 @@ namespace LK20 {
     for(int r = 0; r < m_j.rows; r++) {
       m_hessian += m_j.row(r).t() * m_j.row(r);
     }
-
+    // 8 x 8
     return m_hessian;
   }
 
-
+  // Comute JiJwJg
   cv::Mat LKTracker::ComputeJ(const cv::Mat& m_dxdy, const cv::Mat& m_ref_dxdy) {
     cv::Mat J = cv::Mat::zeros(m_height*m_width, 8, CV_32F);
 
@@ -510,6 +487,7 @@ namespace LK20 {
     }
 
 #if 0
+    // This is used for making gif-images
     static int count = 0;
     std::string s_name = std::to_string(count);
     cv::imwrite(s_name + ".png", mat_for_viewer);
@@ -532,6 +510,10 @@ namespace LK20 {
   }
 
   bool LKTracker::Track(const cv::Mat m_target_image, cv::Mat& m_H, cv::Mat& m_dst_image) {
+    if(mm_H0.empty()) {
+      std::cout << "[ERROR] : The Initial Homography hasn't given." << std::endl;
+      return false;
+    }
     if(mb_verbose) {
       cv::namedWindow(ms_window_name);
     }

@@ -24,13 +24,16 @@ int main(int argc, char* argv[]) {
   // image, target-rect, pyramid number, how to optimize
   LK20::LKTracker _tracker(image, track_rect, 5, LK20::ESM);
 
+  // tx, ty, tz, rx, ry, rz
   cv::Mat warped_image = _simulator.GenerateWarpedImage(45, -45, 20, 30, -30, -50);
 
   cv::Mat H0 = (cv::Mat_<float>(3,3) <<  1.f, 0.f, (float)track_rect.x,
-                                  			 0.f, 1.f, (float)track_rect.y,
-                                  			 0.f, 0.f, 1.f);
+                                         0.f, 1.f, (float)track_rect.y,
+                                         0.f, 0.f, 1.f);
 
+  // Initial Warp is necessary.
   _tracker.SetInitialWarp(H0);
+  // This Ground-Truth is needed in debug-mode (verbose=true)
   _tracker.SetTrueWarp(_simulator.GetWarp());
   _tracker.SetVerbose(true);
 
@@ -40,6 +43,7 @@ int main(int argc, char* argv[]) {
 
   cv::imwrite("warped-input.png", dst_image);
 
+  // This keeps debug-window available.
   _tracker.Spin();
   return 0;
 }
