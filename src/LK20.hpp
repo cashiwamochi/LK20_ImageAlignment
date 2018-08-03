@@ -8,6 +8,9 @@ namespace LK20 {
     FC = 0, // Forward Compositional
     IC = 1, // Inverse Compositional
     ESM = 2, // Efficient Second-Order Mimization
+#if ENABLE_CERES
+    CERES = 3, // Using Ceres
+#endif
   };
 
   class LKTracker {
