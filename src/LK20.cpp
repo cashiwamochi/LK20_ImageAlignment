@@ -156,15 +156,18 @@ namespace LK20 {
       for(int u = 0; u < m_width; u++) {
         const int idx = u + v*m_width;
         if(m_type == ESM) {
-          m_params += -1.0*m_hessian_inv * m_J.row(idx).t() * m_residuals.at<float>(idx,0);
+          // m_params += -1.0*m_hessian_inv * m_J.row(idx).t() * m_residuals.at<float>(idx,0);
+          m_params += -1.0 * m_J.row(idx).t() * m_residuals.at<float>(idx,0);
         }
         else {
-          m_params += m_hessian_inv * m_J.row(idx).t() * m_residuals.at<float>(idx,0);
+          // m_params += m_hessian_inv * m_J.row(idx).t() * m_residuals.at<float>(idx,0);
+          m_params += m_J.row(idx).t() * m_residuals.at<float>(idx,0);
         }
         // [8*1] = [8x8] * [8*1] * [1]
       }
     }
 
+    m_params = m_hessian_inv * m_params;
     return m_params;
   }
 
