@@ -21,7 +21,9 @@ namespace LK20 {
     else if(m_type == FC) {
       std::cout << "Forward Compositional\n";
     }
-
+    else if(m_type == CERES) {
+      std::cout << "Ceres-Solver\n";
+    }
     // Preprocess
     if(mm_ref_image.channels() == 3) {
       cv::cvtColor(mm_ref_image, mm_ref_working_image, cv::COLOR_BGR2GRAY);
@@ -254,7 +256,10 @@ namespace LK20 {
 #if ENABLE_CERES
       case CERES : 
       {
-        std::cout << "test" << std::endl;
+        // do nothing
+        mvm_ref_DxDy.clear();
+        mvm_J.clear();
+        mvm_hessian.clear();
       } break;
 #endif
      }
@@ -397,10 +402,30 @@ namespace LK20 {
           }
         }
       } break;
-#if ENABLE_CERES
+#if ENABLE_CERES 
       case CERES : 
       {
-        std::cout << "test" << std::endl;
+        Problem problem;
+        CostFunction* ceres_cost_function
+         = new NumericDiffCostFunction<HomographyPhotometricCostFunction2,ceres::CENTRAL,1,8>
+          (new HomographyPhotometricCostFunction2{m_ref_image_in_pyramid,m_cur_image_in_pyramid,mm_H0});
+
+        double p_in_H[] = { 1.0, 0.0, 0.0 ,0.0, 1.0, 0.0, 0.0, 0.0 };
+        problem.AddResidualBlock(ceres_cost_function, NULL, p_in_H);
+
+        Solver::Options options;
+        options.linear_solver_type=ceres::DENSE_QR;
+        options.minimizer_progress_to_stdout = true;
+        Solver::Summary summary;
+        Solve(options, &problem, &summary);
+
+        std::cout<<summary.BriefReport()<<std::endl;
+
+        cv::Mat _H = (cv::Mat_<double>(3,3) << p_in_H[0],p_in_H[1],p_in_H[2],
+                                               p_in_H[3],p_in_H[4],p_in_H[5],
+                                               p_in_H[6],p_in_H[7],     1.0);
+        _H.convertTo(H,CV_32F);
+        ShowProcess(mm_ref_image, H);
       } break;
 #endif
     }
