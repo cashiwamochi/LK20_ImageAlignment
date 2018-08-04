@@ -1,5 +1,9 @@
 #include "LK20.hpp"
 
+#if ENABLE_CERES
+#include "Ceres.hpp"
+#endif
+
 namespace LK20 {
   LKTracker::LKTracker(cv::Mat image, cv::Rect rect, int pyramid_level, CalcType t) 
     : mm_ref_image(image), m_pyramid_level(pyramid_level), m_type(t), m_height(rect.height), m_width(rect.width)
@@ -247,6 +251,12 @@ namespace LK20 {
           mvm_ref_DxDy.push_back(m_dxdy);
         }
       } break;
+#if ENABLE_CERES
+      case CERES : 
+      {
+        std::cout << "test" << std::endl;
+      } break;
+#endif
      }
   }
 
@@ -387,6 +397,12 @@ namespace LK20 {
           }
         }
       } break;
+#if ENABLE_CERES
+      case CERES : 
+      {
+        std::cout << "test" << std::endl;
+      } break;
+#endif
     }
 
     return H;

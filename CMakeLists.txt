@@ -8,6 +8,8 @@ ENDIF()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O2")
 
+# OpenCV
+# You can set path to OpenCVConfig.cmake
 set(OpenCV_DIR ~/.local/OpenCV/share/OpenCV)
 find_package(OpenCV REQUIRED)
 IF (OpenCV_FOUND)
@@ -18,16 +20,17 @@ IF (OpenCV_FOUND)
 ENDIF()
 
 # Ceres Solver
-# Evaluation for Auto-Diff
+# http://ceres-solver.org/
+option(WITH_CERES "USE CERES" OFF)
 find_package(Ceres)
 IF (CERES_FOUND)
+  option(WITH_CERES "USE CERES" ON)
   message([message] CERES_VER : ${CERES_VERSION})
   include_directories(${CERES_INCLUDE_DIRS})
   link_directories(${CERES_LIBRARY_DIRS})
   add_definitions(${CERES_DEFINITIONS})
 ENDIF()
 
-option(WITH_CERES "USE CERES" ON)
 if(WITH_CERES)
   add_definitions(-DENABLE_CERES)
 endif()
