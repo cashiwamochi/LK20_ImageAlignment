@@ -15,7 +15,7 @@ namespace LK20 {
       LKTracker(cv::Mat image, cv::Rect rect, int pyramid_level = 4, CalcType t = ESM);
       ~LKTracker() { if(mb_verbose) { cv::destroyWindow(ms_window_name); }};
       void SetInitialWarp(const cv::Mat _H0);
-      bool Track(const cv::Mat m_target_image, cv::Mat& m_H, cv::Mat& m_dst_image);
+      void Track(const cv::Mat m_target_image, cv::Mat& m_H, cv::Mat& m_dst_image);
       void SetVerbose(bool b_verbose);
       void SetTrueWarp(const cv::Mat& m_H_true);
       void Spin();

@@ -512,14 +512,17 @@ namespace LK20 {
     }
   }
 
-  bool LKTracker::Track(const cv::Mat m_target_image, cv::Mat& m_H, cv::Mat& m_dst_image) {
+  void LKTracker::Track(const cv::Mat m_target_image, cv::Mat& m_H, cv::Mat& m_dst_image) {
+    // pre-process
     if(mm_H0.empty()) {
       std::cout << "[ERROR] : The Initial Homography hasn't given." << std::endl;
-      return false;
+      return;
     }
+    
     if(mb_verbose) {
       cv::namedWindow(ms_window_name);
     }
+
     mm_current_original_image = m_target_image.clone();
     cv::Mat m_current_working_image;
     if(m_target_image.channels() == 3) {
@@ -552,7 +555,7 @@ namespace LK20 {
       m_dst_image.convertTo(m_dst_image, CV_8U, 255);
     }
 
-    return true;
+    return ;
   }
 
   void LKTracker::UpdateWarp(const cv::Mat& m_params, cv::Mat& H){
