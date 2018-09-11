@@ -1,8 +1,9 @@
 #include "LK20.hpp"
 
 namespace LK20 {
-  LKTracker::LKTracker(cv::Mat image, cv::Rect rect, int pyramid_level, CalcType t) 
-    : mm_ref_image(image), m_pyramid_level(pyramid_level), m_type(t), m_height(rect.height), m_width(rect.width)
+  LKTracker::LKTracker(cv::Mat image, cv::Rect rect, int pyramid_level, CalcType t0, ParamType t1) 
+    : mm_ref_image(image), m_pyramid_level(pyramid_level), m_type(t0), m_param_type(t1),
+      m_height(rect.height), m_width(rect.width)
   {  
     mm_H0.release(); // This ensures mm_H0 is empty.
     mb_verbose = false;
@@ -34,7 +35,16 @@ namespace LK20 {
       mvm_ref_image_pyramid.push_back(vm_image_pyramid[l](rect));
     }
 
-    RegisterSL3();
+    if (m_param_type == SL3) {
+      RegisterSL3();
+    } 
+    else if (m_param_type == SE3) {
+      mmK = (cv::Mat_<float>(3,3) << 1000.f, 0.f, (float)m_width/2.f,
+                                     0.f, 1000.f, (float)m_height/2.f,
+                                     0.f, 0.f, 1.f);
+      RegisterSE3();
+    }
+    
     PreCompute();
   }
 
@@ -433,6 +443,47 @@ namespace LK20 {
     return;
   }
 
+  void LKTracker::RegisterSE3() {
+    // Register SL3 bases
+    mvm_SL3_bases.resize(8);
+    mvm_SL3_bases[0] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 1.0,
+                                                0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0);
+    mvm_SL3_bases[1] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 1.0,
+                                                0.0, 0.0, 0.0);
+    mvm_SL3_bases[2] = (cv::Mat_<float>(3,3) << 0.0, 1.0, 0.0,
+                                                0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0);
+    mvm_SL3_bases[3] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
+                                                1.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0);
+    mvm_SL3_bases[4] = (cv::Mat_<float>(3,3) << 1.0, 0.0, 0.0,
+                                                0.0,-1.0, 0.0,
+                                                0.0, 0.0, 0.0);
+    mvm_SL3_bases[5] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
+                                                0.0,-1.0, 0.0,
+                                                0.0, 0.0, 1.0);
+    mvm_SL3_bases[6] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0,
+                                                1.0, 0.0, 0.0);
+    mvm_SL3_bases[7] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0,
+                                                0.0, 1.0, 0.0);
+
+    /* PAPER p.12 (65) */
+    // make Jg
+    mm_Jg = cv::Mat::zeros(9, 8, CV_32FC1);
+    for(int i = 0; i < 8; i++) {
+      for(int j = 0; j < 3; j++) {
+        for(int k = 0; k < 3; k++) {
+          mm_Jg.at<float>(j*3 + k,i) = mvm_SL3_bases[i].at<float>(j,k);
+        }
+      }
+    }
+    return;
+  }
+
   void LKTracker::SetInitialWarp(const cv::Mat _H0) {
     mm_H0 = _H0.clone();
     return;
@@ -518,7 +569,7 @@ namespace LK20 {
       std::cout << "[ERROR] : The Initial Homography hasn't given." << std::endl;
       return;
     }
-    
+
     if(mb_verbose) {
       cv::namedWindow(ms_window_name);
     }
