@@ -75,6 +75,7 @@ namespace LK20 {
       std::vector<cv::Mat> mvm_JwJg;
 
       std::vector<cv::Mat> mvm_SE3_bases;
+      cv::Mat mm_Jw;
 
 
       // The length is m_pyramid_level
