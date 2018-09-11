@@ -120,7 +120,6 @@ namespace LK20 {
         float u = (float)_u;
         float v = (float)_v;
 
-        /* PAPER p.12 (63) ただし，第3行成分は実際の計算では0で意味がないので削った */
         cv::Mat _mJw = (cv::Mat_<float>(2,9) <<
         u, v, 1.f, 0.f, 0.f, 0.f, -u*u, -u*v, -u,
         0.f, 0.f, 0.f, u, v, 1.f, -u*v, -v*v, -v);
@@ -445,39 +444,38 @@ namespace LK20 {
 
   void LKTracker::RegisterSE3() {
     // Register SL3 bases
-    mvm_SL3_bases.resize(8);
-    mvm_SL3_bases[0] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 1.0,
-                                                0.0, 0.0, 0.0,
-                                                0.0, 0.0, 0.0);
-    mvm_SL3_bases[1] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
-                                                0.0, 0.0, 1.0,
-                                                0.0, 0.0, 0.0);
-    mvm_SL3_bases[2] = (cv::Mat_<float>(3,3) << 0.0, 1.0, 0.0,
-                                                0.0, 0.0, 0.0,
-                                                0.0, 0.0, 0.0);
-    mvm_SL3_bases[3] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
-                                                1.0, 0.0, 0.0,
-                                                0.0, 0.0, 0.0);
-    mvm_SL3_bases[4] = (cv::Mat_<float>(3,3) << 1.0, 0.0, 0.0,
-                                                0.0,-1.0, 0.0,
-                                                0.0, 0.0, 0.0);
-    mvm_SL3_bases[5] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
-                                                0.0,-1.0, 0.0,
-                                                0.0, 0.0, 1.0);
-    mvm_SL3_bases[6] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
-                                                0.0, 0.0, 0.0,
-                                                1.0, 0.0, 0.0);
-    mvm_SL3_bases[7] = (cv::Mat_<float>(3,3) << 0.0, 0.0, 0.0,
-                                                0.0, 0.0, 0.0,
-                                                0.0, 1.0, 0.0);
-
-    /* PAPER p.12 (65) */
+    mvm_SE3_bases.resize(6);
+    mvm_SE3_bases[0] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 0.0, 1.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[1] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 1.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[2] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 1.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[3] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0,-1.0, 0.0,
+                                                0.0, 1.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[4] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 1.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                               -1.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[5] = (cv::Mat_<float>(4,4) << 0.0,-1.0, 0.0, 0.0,
+                                                1.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    
     // make Jg
-    mm_Jg = cv::Mat::zeros(9, 8, CV_32FC1);
-    for(int i = 0; i < 8; i++) {
+    mm_Jg = cv::Mat::zeros(12, 6, CV_32FC1);
+    for(int i = 0; i < 6; i++) {
       for(int j = 0; j < 3; j++) {
-        for(int k = 0; k < 3; k++) {
-          mm_Jg.at<float>(j*3 + k,i) = mvm_SL3_bases[i].at<float>(j,k);
+        for(int k = 0; k < 4; k++) {
+          mm_Jg.at<float>(j*4 + k, i) = mvm_SE3_bases[i].at<float>(j,k);
         }
       }
     }
