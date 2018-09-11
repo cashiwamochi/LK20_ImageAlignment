@@ -472,23 +472,29 @@ namespace LK20 {
     mm_Jw = cv::Mat::zeros(9, 12, CV_32FC1);
     cv::Mat mK_inv = mmK.inv();
 
+    int offset = 0;
     for (int i = 0; i < 9; i++) {
       cv::Mat temp = cv::Mat::zeros(3,3,CV_32FC1);
       temp.at<float>(i/3, i%3) = 1.0;
-      cv::Mat _j = mmK*temp*mK_inv;
-
+      temp = mmK*temp*mK_inv;
       for (int j = 0; j < 9; j++) {
-        mm_Jw.at<float>(j,i) = temp.at<float>(j/3, j%3);
-        
-        if (i==2) {
-          mm_Jw.at<float>(j,9) = temp.at<float>(j/3, j%3);
-        }
-        else if(i==5) {
-          mm_Jw.at<float>(j,10) = temp.at<float>(j/3, j%3);
-        }
-        else if(i==8) {
-          mm_Jw.at<float>(j,11) = temp.at<float>(j/3, j%3);
-        }
+        mm_Jw.at<float>(j,i+offset) = temp.at<float>(j/3, j%3);
+      }
+
+      if (i==2) {
+        offset++;
+        for (int j = 0; j < 9; j++)
+          mm_Jw.at<float>(j,i+offset) = temp.at<float>(j/3, j%3);
+      }
+      else if(i==5) {
+        offset++;
+        for (int j = 0; j < 9; j++)
+          mm_Jw.at<float>(j,i+offset) = temp.at<float>(j/3, j%3);
+      }
+      else if(i==8) {
+        offset++;
+        for (int j = 0; j < 9; j++)
+          mm_Jw.at<float>(j,i+offset) = temp.at<float>(j/3, j%3);
       }
     }
 
@@ -521,13 +527,25 @@ namespace LK20 {
     
     // make Jg
     mm_Jg = cv::Mat::zeros(12, 6, CV_32FC1);
+    #if 1
     for(int i = 0; i < 6; i++) {
       for(int j = 0; j < 3; j++) {
         for(int k = 0; k < 4; k++) {
-          mm_Jg.at<float>(j*4 + k, i) = mvm_SE3_bases[i].at<float>(j,k);
+          mm_Jg.at<float>(j*4 + k, i) = mvm_SE3_bases[i].at<float>(j, k);
         }
       }
     }
+    // this is wrong
+    #else
+    for(int i = 0; i < 6; i++) {
+      for(int j = 0; j < 4; j++) {
+        for(int k = 0; k < 3; k++) {
+          mm_Jg.at<float>(j*3 + k, i) = mvm_SE3_bases[i].at<float>(k, j);
+        }
+      }
+    }
+
+    #endif
     return;
   }
 
@@ -682,8 +700,8 @@ namespace LK20 {
     const cv::Mat t = m_params.rowRange(0, 3);
     const cv::Mat w = m_params.rowRange(3, 6);
     cv::Mat w_x = (cv::Mat_<float>(3,3) << 0.0, -w.at<float>(2,0), w.at<float>(1,0),
-                                            w.at<float>(2,0), 0.0, -w.at<float>(0,0),
-                                            -w.at<float>(1,0), w.at<float>(0,0), 0.0);
+                                           w.at<float>(2,0), 0.0, -w.at<float>(0,0),
+                                           -w.at<float>(1,0), w.at<float>(0,0), 0.0);
     const float theta = sqrt(w.at<float>(0,0)*w.at<float>(0,0) + w.at<float>(1,0)*w.at<float>(1,0) + w.at<float>(2,0)*w.at<float>(2,0));
 
     cv::Mat e_w_x = cv::Mat::eye(3,3,CV_32F) + (std::sin(theta)/theta)*w_x + ((1.0-std::cos(theta))/(theta*theta))*w_x*w_x;
@@ -693,7 +711,7 @@ namespace LK20 {
     e_w_x.copyTo(delta_SE3.rowRange(0,3).colRange(0,3));
     Vt.copyTo(delta_SE3.rowRange(0,3).col(3));
     cv::Mat n = (cv::Mat_<float>(1,3) << 0.0, 0.0, 1.0);
-    delta_H = (delta_SE3.rowRange(0,3).colRange(0,3) + delta_SE3.rowRange(0,3).col(3)*n);
+    delta_H = mmK * (delta_SE3.rowRange(0,3).colRange(0,3) + delta_SE3.rowRange(0,3).col(3)*n) * mmK.inv();
   }
 
   // update!!

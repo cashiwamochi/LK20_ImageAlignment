@@ -22,10 +22,10 @@ int main(int argc, char* argv[]) {
   cv::imwrite("target-template.png", target_template);
 
   // image, target-rect, pyramid number, how to optimize
-  LK20::LKTracker _tracker(image, track_rect, 5, LK20::ESM, LK20::SE3);
+  LK20::LKTracker _tracker(image, track_rect, 3, LK20::IC, LK20::SE3);
 
   // tx, ty, tz, rx, ry, rz
-  cv::Mat warped_image = _simulator.GenerateWarpedImage(-25, -25, 20, 10, -30, -50);
+  cv::Mat warped_image = _simulator.GenerateWarpedImage(5, 5, -5, 5, -5, -5);
 
   cv::Mat H0 = (cv::Mat_<float>(3,3) <<  1.f, 0.f, (float)track_rect.x,
                                          0.f, 1.f, (float)track_rect.y,
