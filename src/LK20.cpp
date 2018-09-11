@@ -10,14 +10,22 @@ namespace LK20 {
    // How to Calculate
     std::cout << "[MODE] : ";
     if(m_type == ESM) {
-      std::cout << "Efficient Second-Order Minimization\n";
+      std::cout << "Efficient Second-Order Minimization";
     }
     else if(m_type == IC) {
-      std::cout << "Inverse Compositional\n";
+      std::cout << "Inverse Compositional";
     }
     else if(m_type == FC) {
-      std::cout << "Forward Compositional\n";
+      std::cout << "Forward Compositional";
     }
+    std::cout << " / ";
+    if(m_param_type == SL3) {
+      std::cout << "SL3";
+    }
+    else if (m_param_type == SE3) {
+      std::cout << "SE3";
+    }
+    std::cout << std::endl;
 
     // Preprocess
     if(mm_ref_image.channels() == 3) {
@@ -697,8 +705,9 @@ namespace LK20 {
     delta_H = G.clone();
   }
   else if (m_param_type == SE3) {
-    const cv::Mat t = m_params.rowRange(0, 3);
-    const cv::Mat w = m_params.rowRange(3, 6);
+    const float scale = 0.1;
+    const cv::Mat t = scale*m_params.rowRange(0, 3);
+    const cv::Mat w = scale*m_params.rowRange(3, 6);
     cv::Mat w_x = (cv::Mat_<float>(3,3) << 0.0, -w.at<float>(2,0), w.at<float>(1,0),
                                            w.at<float>(2,0), 0.0, -w.at<float>(0,0),
                                            -w.at<float>(1,0), w.at<float>(0,0), 0.0);

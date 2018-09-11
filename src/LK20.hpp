@@ -68,7 +68,7 @@ namespace LK20 {
       const ParamType m_param_type;
 
       const int m_pyramid_factor = 2;
-      const int m_iter_max = 100;
+      const int m_iter_max = 200;
 
       std::vector<cv::Mat> mvm_SL3_bases;
       cv::Mat mm_Jg;
