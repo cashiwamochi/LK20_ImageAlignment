@@ -407,14 +407,14 @@ namespace LK20 {
       {
         Problem problem;
         CostFunction* ceres_cost_function
-         = new NumericDiffCostFunction<HomographyPhotometricCostFunction2,ceres::CENTRAL,1,8>
-          (new HomographyPhotometricCostFunction2{m_ref_image_in_pyramid,m_cur_image_in_pyramid,mm_H0});
+         = new NumericDiffCostFunction<HomographyPhotometricCostFunction,ceres::CENTRAL,160*160,8>
+          (new HomographyPhotometricCostFunction{m_ref_image_in_pyramid,m_cur_image_in_pyramid,mm_H0});
 
         double p_in_H[] = { 1.0, 0.0, 0.0 ,0.0, 1.0, 0.0, 0.0, 0.0 };
         problem.AddResidualBlock(ceres_cost_function, NULL, p_in_H);
 
         Solver::Options options;
-        options.linear_solver_type=ceres::DENSE_QR;
+        options.linear_solver_type = ceres::DENSE_QR;
         options.minimizer_progress_to_stdout = true;
         Solver::Summary summary;
         Solve(options, &problem, &summary);

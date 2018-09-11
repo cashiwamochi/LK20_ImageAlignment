@@ -16,8 +16,8 @@ using ceres::Solve;
 using ceres::CauchyLoss;
 
 namespace LK20 {
-  struct HomographyPhotometricCostFunction2{
-    HomographyPhotometricCostFunction2(cv::Mat m_ref_image, cv::Mat m_cur_image, cv::Mat m_H0){
+  struct HomographyPhotometricCostFunction{
+    HomographyPhotometricCostFunction(cv::Mat m_ref_image, cv::Mat m_cur_image, cv::Mat m_H0){
       m_ref_image.convertTo(mm_ref_image,CV_64F);
       m_cur_image.convertTo(mm_cur_image,CV_64F);
       m_H0.convertTo(mm_H0, CV_64F);
@@ -34,14 +34,14 @@ namespace LK20 {
                           cv::INTER_LINEAR + cv::WARP_INVERSE_MAP, cv::BORDER_CONSTANT,
                           cv::Scalar(0,0,0));
 
-      double r = 0.0;
-      for (int i = 0; i < mm_ref_image.rows; i++) {
-        for (int j = 0; j < mm_ref_image.cols; j++) {
-          r -= (mm_ref_image.at<double>(i,j) - m_dst_image.at<double>(i,j));
+      for (int i = 0; i < mm_ref_image.cols; i++) {
+        for (int j = 0; j < mm_ref_image.rows; j++) {
+          const int idx = j*mm_ref_image.rows + i;
+          residual[idx] = (mm_ref_image.at<double>(j,i) - m_dst_image.at<double>(j,i));
         }
       }
 
-      residual[0] = r/(double)(mm_ref_image.rows*mm_cur_image.cols);
+      //residual[0] = r/(double)(mm_ref_image.rows*mm_cur_image.cols);
       return true;
     }
     cv::Mat mm_cur_image, mm_ref_image;
