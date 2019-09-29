@@ -25,6 +25,9 @@ cmake .. && make -j2
 [4] https://ipsj.ixsq.nii.ac.jp/ej/?action=repository_action_common_download&item_id=77703&item_no=1&attribute_id=1&file_no=1
 ```
 
+### Note
+In dev-se3 branch, SE3(6-DoF) optimization is implemented. It can be built and works, but I cannot make sure that it's correct. My SE3 version worse than SL3 in convergence radius. I think that there should be no large effect in inconvergence radius. 
+
 --------
 ### 何これ
 Lucas-Kanade法による平面追跡を ***Lucas-Kanade 20 years frameworks*** **[1]** を参考にして実装した．ForwardCompositional，InverseCompositional,Efficient Second-Order Minimization を実装し収束範囲を広げるためにイメージピラミッドを用いた最適化を行う．また，二次元射影変換行列を求めるにあたってSL3で表現した．
