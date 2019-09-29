@@ -1,22 +1,31 @@
 #include "LK20.hpp"
 
 namespace LK20 {
-  LKTracker::LKTracker(cv::Mat image, cv::Rect rect, int pyramid_level, CalcType t) 
-    : mm_ref_image(image), m_pyramid_level(pyramid_level), m_type(t), m_height(rect.height), m_width(rect.width)
+  LKTracker::LKTracker(cv::Mat image, cv::Rect rect, int pyramid_level, CalcType t0, ParamType t1) 
+    : mm_ref_image(image), m_pyramid_level(pyramid_level), m_type(t0), m_param_type(t1),
+      m_height(rect.height), m_width(rect.width)
   {  
     mm_H0.release(); // This ensures mm_H0 is empty.
     mb_verbose = false;
    // How to Calculate
     std::cout << "[MODE] : ";
     if(m_type == ESM) {
-      std::cout << "Efficient Second-Order Minimization\n";
+      std::cout << "Efficient Second-Order Minimization";
     }
     else if(m_type == IC) {
-      std::cout << "Inverse Compositional\n";
+      std::cout << "Inverse Compositional";
     }
     else if(m_type == FC) {
-      std::cout << "Forward Compositional\n";
+      std::cout << "Forward Compositional";
     }
+    std::cout << " / ";
+    if(m_param_type == SL3) {
+      std::cout << "SL3";
+    }
+    else if (m_param_type == SE3) {
+      std::cout << "SE3";
+    }
+    std::cout << std::endl;
 
     // Preprocess
     if(mm_ref_image.channels() == 3) {
@@ -34,7 +43,16 @@ namespace LK20 {
       mvm_ref_image_pyramid.push_back(vm_image_pyramid[l](rect));
     }
 
-    RegisterSL3();
+    if (m_param_type == SL3) {
+      RegisterSL3();
+    } 
+    else if (m_param_type == SE3) {
+      mmK = (cv::Mat_<float>(3,3) << 1000.f, 0.f, (float)m_width/2.f,
+                                     0.f, 1000.f, (float)m_height/2.f,
+                                     0.f, 0.f, 1.f);
+      RegisterSE3();
+    }
+    
     PreCompute();
   }
 
@@ -61,7 +79,15 @@ namespace LK20 {
   }
 
   cv::Mat LKTracker::ComputeHessian(const cv::Mat& m_j) {
-    int num_of_params = (int)mvm_SL3_bases.size(); // 8
+    
+    int num_of_params = -1;
+    if (m_param_type == SL3){
+      num_of_params = (int)mvm_SL3_bases.size(); // 8
+    }
+    else if (m_param_type == SE3) {
+      num_of_params = (int)mvm_SE3_bases.size(); // 8
+    }
+    
     cv::Mat m_hessian = cv::Mat::zeros(num_of_params, num_of_params, CV_32F);
 
     for(int r = 0; r < m_j.rows; r++) {
@@ -73,7 +99,12 @@ namespace LK20 {
 
   // Comute JiJwJg
   cv::Mat LKTracker::ComputeJ(const cv::Mat& m_dxdy, const cv::Mat& m_ref_dxdy) {
-    cv::Mat J = cv::Mat::zeros(m_height*m_width, 8, CV_32F);
+    cv::Mat J;
+    
+    if (m_param_type == SL3) 
+      J = cv::Mat::zeros(m_height*m_width, 8, CV_32F);
+    else if (m_param_type == SE3)
+      J = cv::Mat::zeros(m_height*m_width, 6, CV_32F);
 
     cv::Mat m_Ji;
     if(m_type == ESM) {
@@ -89,7 +120,7 @@ namespace LK20 {
           _j = m_dxdy.row(idx) * mvm_JwJg[idx];
         }
         else if(m_type == ESM) {
-          _j = m_Ji.row(idx) * mvm_JwJg[idx];          
+          _j = m_Ji.row(idx) * mvm_JwJg[idx];
         }
         _j.copyTo(J.row(idx));
       }
@@ -110,13 +141,20 @@ namespace LK20 {
         float u = (float)_u;
         float v = (float)_v;
 
-        /* PAPER p.12 (63) ただし，第3行成分は実際の計算では0で意味がないので削った */
         cv::Mat _mJw = (cv::Mat_<float>(2,9) <<
         u, v, 1.f, 0.f, 0.f, 0.f, -u*u, -u*v, -u,
         0.f, 0.f, 0.f, u, v, 1.f, -u*v, -v*v, -v);
 
-        cv::Mat mfjwjg = _mJw * mm_Jg;
-        // [2x8] = [2x9] x [9x8]
+        cv::Mat mfjwjg;
+        if (m_param_type == SL3) {
+          mfjwjg = _mJw * mm_Jg;
+          // [2x8] = [2x9] x [9x8]
+        }
+        else if (m_param_type == SE3) {
+          mfjwjg = _mJw * mm_Jw * mm_Jg;
+          // [2x6] = [2x9] x [9x12] x [12x6]
+        } 
+          
         mvm_JwJg.push_back(mfjwjg);
         // pixel-number x [2 x 8]
       }
@@ -150,7 +188,12 @@ namespace LK20 {
   cv::Mat LKTracker::ComputeUpdateParams(const cv::Mat& m_hessian, 
                                          const cv::Mat& m_J,
                                          const cv::Mat& m_residuals)  {
-    cv::Mat m_params = cv::Mat::zeros(8,1,CV_32F);
+    cv::Mat m_params;
+    if (m_param_type == SL3)
+      m_params = cv::Mat::zeros(8,1,CV_32F);
+    else if (m_param_type == SE3)
+      m_params = cv::Mat::zeros(6,1,CV_32F);
+
     cv::Mat m_hessian_inv = m_hessian.inv();
     for(int v = 0; v < m_height; v++) {
       for(int u = 0; u < m_width; u++) {
@@ -433,6 +476,87 @@ namespace LK20 {
     return;
   }
 
+  void LKTracker::RegisterSE3() {
+    mm_Jw = cv::Mat::zeros(9, 12, CV_32FC1);
+    cv::Mat mK_inv = mmK.inv();
+
+    int offset = 0;
+    for (int i = 0; i < 9; i++) {
+      cv::Mat temp = cv::Mat::zeros(3,3,CV_32FC1);
+      temp.at<float>(i/3, i%3) = 1.0;
+      temp = mmK*temp*mK_inv;
+      for (int j = 0; j < 9; j++) {
+        mm_Jw.at<float>(j,i+offset) = temp.at<float>(j/3, j%3);
+      }
+
+      if (i==2) {
+        offset++;
+        for (int j = 0; j < 9; j++)
+          mm_Jw.at<float>(j,i+offset) = temp.at<float>(j/3, j%3);
+      }
+      else if(i==5) {
+        offset++;
+        for (int j = 0; j < 9; j++)
+          mm_Jw.at<float>(j,i+offset) = temp.at<float>(j/3, j%3);
+      }
+      else if(i==8) {
+        offset++;
+        for (int j = 0; j < 9; j++)
+          mm_Jw.at<float>(j,i+offset) = temp.at<float>(j/3, j%3);
+      }
+    }
+
+    // Register SE3 bases
+    mvm_SE3_bases.resize(6);
+    mvm_SE3_bases[0] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 0.0, 1.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[1] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 1.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[2] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 1.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[3] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0,-1.0, 0.0,
+                                                0.0, 1.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[4] = (cv::Mat_<float>(4,4) << 0.0, 0.0, 1.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                               -1.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    mvm_SE3_bases[5] = (cv::Mat_<float>(4,4) << 0.0,-1.0, 0.0, 0.0,
+                                                1.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0,
+                                                0.0, 0.0, 0.0, 0.0);
+    
+    // make Jg
+    mm_Jg = cv::Mat::zeros(12, 6, CV_32FC1);
+    #if 1
+    for(int i = 0; i < 6; i++) {
+      for(int j = 0; j < 3; j++) {
+        for(int k = 0; k < 4; k++) {
+          mm_Jg.at<float>(j*4 + k, i) = mvm_SE3_bases[i].at<float>(j, k);
+        }
+      }
+    }
+    // this is wrong
+    #else
+    for(int i = 0; i < 6; i++) {
+      for(int j = 0; j < 4; j++) {
+        for(int k = 0; k < 3; k++) {
+          mm_Jg.at<float>(j*3 + k, i) = mvm_SE3_bases[i].at<float>(k, j);
+        }
+      }
+    }
+
+    #endif
+    return;
+  }
+
   void LKTracker::SetInitialWarp(const cv::Mat _H0) {
     mm_H0 = _H0.clone();
     return;
@@ -518,7 +642,7 @@ namespace LK20 {
       std::cout << "[ERROR] : The Initial Homography hasn't given." << std::endl;
       return;
     }
-    
+
     if(mb_verbose) {
       cv::namedWindow(ms_window_name);
     }
@@ -559,24 +683,45 @@ namespace LK20 {
   }
 
   void LKTracker::UpdateWarp(const cv::Mat& m_params, cv::Mat& H){
+  cv::Mat delta_H;
 
-  /* PAPER (41) (42) */
-  cv::Mat A = cv::Mat::zeros(3,3,CV_32F);
-  for(int i = 0; i < 8; i++) {
-    A += (m_params.at<float>(i) * mvm_SL3_bases[i]);
+  if (m_param_type == SL3) {
+    /* PAPER (41) (42) */
+    cv::Mat A = cv::Mat::zeros(3,3,CV_32F);
+    for(int i = 0; i < 8; i++) {
+      A += (m_params.at<float>(i) * mvm_SL3_bases[i]);
+    }
+
+    cv::Mat G = cv::Mat::zeros(3, 3, CV_32F);
+    cv::Mat A_i = cv::Mat::eye(3, 3, CV_32F);
+    float factor_i = 1.f;
+
+    for(int i = 0; i < 9; i++) {
+      G += (1.0/factor_i)*(A_i);
+      A_i *= A;
+      factor_i *= (float)(i+1);
+    }
+
+    delta_H = G.clone();
   }
+  else if (m_param_type == SE3) {
+    const float scale = 0.1;
+    const cv::Mat t = scale*m_params.rowRange(0, 3);
+    const cv::Mat w = scale*m_params.rowRange(3, 6);
+    cv::Mat w_x = (cv::Mat_<float>(3,3) << 0.0, -w.at<float>(2,0), w.at<float>(1,0),
+                                           w.at<float>(2,0), 0.0, -w.at<float>(0,0),
+                                           -w.at<float>(1,0), w.at<float>(0,0), 0.0);
+    const float theta = sqrt(w.at<float>(0,0)*w.at<float>(0,0) + w.at<float>(1,0)*w.at<float>(1,0) + w.at<float>(2,0)*w.at<float>(2,0));
 
-  cv::Mat G = cv::Mat::zeros(3, 3, CV_32F);
-  cv::Mat A_i = cv::Mat::eye(3, 3, CV_32F);
-  float factor_i = 1.f;
-
-  for(int i = 0; i < 9; i++) {
-    G += (1.0/factor_i)*(A_i);
-    A_i *= A;
-    factor_i *= (float)(i+1);
+    cv::Mat e_w_x = cv::Mat::eye(3,3,CV_32F) + (std::sin(theta)/theta)*w_x + ((1.0-std::cos(theta))/(theta*theta))*w_x*w_x;
+    cv::Mat V =  cv::Mat::eye(3,3,CV_32F) + ((1.0-std::cos(theta))/(theta*theta))*w_x + ((theta - std::sin(theta))/(theta*theta*theta))*w_x*w_x;
+    cv::Mat Vt = V * t;
+    cv::Mat delta_SE3 = cv::Mat::eye(4,4,CV_32F);
+    e_w_x.copyTo(delta_SE3.rowRange(0,3).colRange(0,3));
+    Vt.copyTo(delta_SE3.rowRange(0,3).col(3));
+    cv::Mat n = (cv::Mat_<float>(1,3) << 0.0, 0.0, 1.0);
+    delta_H = mmK * (delta_SE3.rowRange(0,3).colRange(0,3) + delta_SE3.rowRange(0,3).col(3)*n) * mmK.inv();
   }
-
-  cv::Mat delta_H = G.clone();
 
   // update!!
   if(m_type == IC) {

@@ -10,9 +10,14 @@ namespace LK20 {
     ESM = 2, // Efficient Second-Order Mimization
   };
 
+  enum ParamType {
+    SL3 = 0, // H is parametrized by SL3
+    SE3 = 1, // H is parametrtized by SE3
+  };
+
   class LKTracker {
     public:
-      LKTracker(cv::Mat image, cv::Rect rect, int pyramid_level = 4, CalcType t = ESM);
+      LKTracker(cv::Mat image, cv::Rect rect, int pyramid_level = 4, CalcType t0 = ESM, ParamType t1 = SL3);
       ~LKTracker() { if(mb_verbose) { cv::destroyWindow(ms_window_name); }};
       void SetInitialWarp(const cv::Mat _H0);
       void Track(const cv::Mat m_target_image, cv::Mat& m_H, cv::Mat& m_dst_image);
@@ -23,6 +28,7 @@ namespace LK20 {
     private:
       void PreCompute();
       void RegisterSL3();
+      void RegisterSE3();
 
       void ComputeJwJg();
       cv::Mat ComputeJ(const cv::Mat& m_dxdy, const cv::Mat& m_ref_dxdy = cv::noArray().getMat());
@@ -59,19 +65,25 @@ namespace LK20 {
 
       const int m_pyramid_level;
       const CalcType m_type;
+      const ParamType m_param_type;
 
       const int m_pyramid_factor = 2;
-      const int m_iter_max = 100;
+      const int m_iter_max = 200;
 
       std::vector<cv::Mat> mvm_SL3_bases;
       cv::Mat mm_Jg;
       std::vector<cv::Mat> mvm_JwJg;
+
+      std::vector<cv::Mat> mvm_SE3_bases;
+      cv::Mat mm_Jw;
+
 
       // The length is m_pyramid_level
       std::vector<cv::Mat> mvm_ref_DxDy;
       std::vector<cv::Mat> mvm_J;
       std::vector<cv::Mat> mvm_hessian;
 
+      cv::Mat mmK;
       cv::Mat mm_H0;
       cv::Mat mm_H_gt;
 
