@@ -6,7 +6,7 @@
  
 
 ### What is this ?
-I implemented a planar tracking algorithm based on ***Lucas-Kanade 20 years frameworks*** **[1]** . You can try three algorithm, Forward Compositional, Inverse Compositional and Efficient Second-Order Minimization. This system returns a homography matrix and it is parametrized with SL3 in optimization. In addition, this system performs coarse-to-fine optimization using image-pyramid.
+I implemented a planar tracking algorithm based on ***Lucas-Kanade 20 years frameworks*** **[1]** . You can try three algorithms, Forward Compositional, Inverse Compositional and Efficient Second-Order Minimization. This system returns a homography matrix and it is parametrized with SL3 in optimization. In addition, this system performs coarse-to-fine optimization using image-pyramid.
 
 ### How to Build, Run
 ```

@@ -269,7 +269,7 @@ namespace LK20 {
           cv::Mat new_H = H.clone();
           UpdateWarp(m_update_params, new_H);
           
-          if((int)previous_error < 0) {
+          if(previous_error < 0.0) {
             // decide whether iterative update should be done in this level or not
             m_cur_working_image = WarpCurrentImage(m_cur_image_in_pyramid, new_H);
             previous_error = current_error;
@@ -313,7 +313,7 @@ namespace LK20 {
           cv::Mat new_H = H.clone();
           UpdateWarp(m_update_params, new_H);
 
-          if((int)previous_error < 0) {
+          if(previous_error < 0.0) {
             // decide whether iterative update should be done in this level or not
             m_cur_working_image = WarpCurrentImage(m_cur_image_in_pyramid, new_H);
             previous_error = current_error;
@@ -357,7 +357,7 @@ namespace LK20 {
           cv::Mat new_H = H.clone();
           UpdateWarp(m_update_params, new_H);
 
-          if((int)previous_error < 0) {
+          if(previous_error < 0.0) {
             // decide whether iterative update should be done in this level or not
             m_cur_working_image = WarpCurrentImage(m_cur_image_in_pyramid, new_H);
             previous_error = current_error;
