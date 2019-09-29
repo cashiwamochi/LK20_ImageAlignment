@@ -47,8 +47,8 @@ namespace LK20 {
       RegisterSL3();
     } 
     else if (m_param_type == SE3) {
-      mmK = (cv::Mat_<float>(3,3) << 1000.f, 0.f, (float)m_width/2.f,
-                                     0.f, 1000.f, (float)m_height/2.f,
+      mmK = (cv::Mat_<float>(3,3) << 500.f, 0.f, (float)m_width/2.f,
+                                     0.f, 500.f, (float)m_height/2.f,
                                      0.f, 0.f, 1.f);
       RegisterSE3();
     }
@@ -85,7 +85,7 @@ namespace LK20 {
       num_of_params = (int)mvm_SL3_bases.size(); // 8
     }
     else if (m_param_type == SE3) {
-      num_of_params = (int)mvm_SE3_bases.size(); // 8
+      num_of_params = (int)mvm_SE3_bases.size(); // 6
     }
     
     cv::Mat m_hessian = cv::Mat::zeros(num_of_params, num_of_params, CV_32F);
@@ -477,6 +477,7 @@ namespace LK20 {
   }
 
   void LKTracker::RegisterSE3() {
+#if 1
     mm_Jw = cv::Mat::zeros(9, 12, CV_32FC1);
     cv::Mat mK_inv = mmK.inv();
 
@@ -505,6 +506,38 @@ namespace LK20 {
           mm_Jw.at<float>(j,i+offset) = temp.at<float>(j/3, j%3);
       }
     }
+#else
+    mm_Jw = cv::Mat::zeros(9, 12, CV_32FC1);
+    cv::Mat mK_inv = mmK.inv();
+
+    std::vector<std::vector<int>> vv_j_idx;
+    vv_j_idx.reserve(12);
+    vv_j_idx.push_back(std::vector<int>{0});
+    vv_j_idx.push_back(std::vector<int>{3});
+    vv_j_idx.push_back(std::vector<int>{6});
+    vv_j_idx.push_back(std::vector<int>{0,3,6});
+    vv_j_idx.push_back(std::vector<int>{1});
+    vv_j_idx.push_back(std::vector<int>{4});
+    vv_j_idx.push_back(std::vector<int>{7});
+    vv_j_idx.push_back(std::vector<int>{1,4,7});
+    vv_j_idx.push_back(std::vector<int>{2});
+    vv_j_idx.push_back(std::vector<int>{5});
+    vv_j_idx.push_back(std::vector<int>{8});
+    vv_j_idx.push_back(std::vector<int>{2,5,8});
+
+    for (int i = 0; i < 12; i++) {
+      if(i == 3 or i == 7) continue;
+      cv::Mat temp = cv::Mat::zeros(3,3,CV_32FC1);
+      for(auto j_idx : vv_j_idx[i]) {
+        temp.at<float>(j_idx/3, j_idx%3) = 1.0;
+      }
+
+      temp = mmK*temp*mK_inv;
+      for (int j = 0; j < 9; j++) {
+        mm_Jw.at<float>(j,i) = temp.at<float>(j/3, j%3);
+      }
+    }
+#endif
 
     // Register SE3 bases
     mvm_SE3_bases.resize(6);
