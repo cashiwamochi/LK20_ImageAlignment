@@ -15,6 +15,8 @@ cmake .. && make -j2
 ./LK20_tracker ../lenna.png
 ```
 
+OpenCV4 and 3 are supported.
+
 ```LK_example.cc``` shows you how to use this framework.
 
 #### Reference

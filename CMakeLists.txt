@@ -8,7 +8,7 @@ ENDIF()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O2")
 
-set(OpenCV_DIR ~/.local/OpenCV/share/OpenCV)
+# set(OpenCV_DIR ~/.local/OpenCV/lib/cmake/opencv4)
 find_package(OpenCV REQUIRED)
 IF (OpenCV_FOUND)
   message([message] OpenCV_VER:${OpenCV_VERSION})
